@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Catch-all Default Deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Rules for User Collection
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create, update: if isSignedIn() && (isOwner(userId) || incoming().role == 'reviewer' || incoming().role == 'admin');
+      allow delete: if isSignedIn() && (isOwner(userId) || request.auth.uid == 'admin');
+    }
+
+    // Rules for Submissions
+    match /submissions/{submissionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && (incoming().userId == request.auth.uid || existing().userId == request.auth.uid);
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Rules for Audit Logs
+    match /auditLogs/{auditLogId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+    }
+
+    // Rules for Chat Messages
+    match /chatMessages/{messageId} {
+      allow read, write: if isSignedIn() && (incoming() == null || incoming().userId == request.auth.uid);
+    }
+  }
+}

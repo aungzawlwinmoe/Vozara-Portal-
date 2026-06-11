@@ -1,0 +1,6 @@
+{
+  "name": "Vozara LS Compliance Portal",
+  "description": "Enterprise compliance and onboarding portal for Vozara LS interpreters, covering document collection, manual review workflows, and compliance analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
